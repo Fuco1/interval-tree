@@ -41,26 +41,42 @@
 ;; interval structure
 ;; (:beg b :end e :value val)
 (defun interval-create (beg end &optional val)
+  "Create an interval from BEG to END.
+
+Intervals can optionally hold a value VAL."
   (list :beg beg :end end :value val))
 
 (defun interval-copy (interval)
+  "Copy an interval INTERVAL.
+
+This operation creates a shallow copy (the value is not
+deep-copied)."
   (list :beg (interval-beginning interval)
         :end (interval-end interval)
         :value (interval-value interval)))
 
 (defun interval-beginning (interval)
+  "Return the beginning of INTERVAL."
   (plist-get interval :beg))
 
 (defun interval-end (interval)
+  "Return the end of INTERVAL."
   (plist-get interval :end))
 
 (defun interval-value (interval)
+  "Return the value of INTERVAL."
   (plist-get interval :value))
 
 (defun interval-compare (int-a int-b)
+  "Compare two intervals INT-A and INT-B by their beginning.
+
+Return non-nil if beginning of INT-A < beginning of INT-B."
   (< (interval-beginning int-a) (interval-beginning int-b)))
 
 (defun interval-compare-reverse (int-a int-b)
+  "Compare two intervals INT-A and INT-B by their beginning.
+
+Return non-nil if beginning of INT-A > beginning of INT-B."
   (> (interval-beginning int-a) (interval-beginning int-b)))
 
 ;; interval tree
@@ -70,36 +86,65 @@
 ;;  :center integer-center)
 
 (defun interval-tree-left (interval-tree)
+  "Return the left subtree of INTERVAL-TREE."
   (plist-get interval-tree :left))
 
 (defun interval-tree-right (interval-tree)
+  "Return the right subtree of INTERVAL-TREE."
   (plist-get interval-tree :right))
 
 (defun interval-tree-center (interval-tree)
+  "Return the center value of INTERVAL-TREE.
+
+Center is the midpoint of all the intervals contained in this node."
   (plist-get interval-tree :center))
 
 (defun interval-tree-intervals (interval-tree)
+  "Return intervals contained in this node of INTERVAL-TREE."
   (plist-get interval-tree :intervals))
 
 (defun interval-tree-create (intervals &optional left right center)
+  "Create the interval-tree node.
+
+INTERVALS is a list of intervals contained in this node.
+
+LEFT and RIGHT are left and right subtrees respectively.
+
+CENTER is the midpoint of all the INTERVALS contained in this node."
   (list :left left :right right :intervals intervals :center (or center 0)))
 
 (defun interval-tree-copy (interval-tree)
+  "Copy an INTERVAL-TREE.
+
+This creates a shallow copy of the node."
   (list :left (interval-tree-left interval-tree)
         :right (interval-tree-right interval-tree)
         :intervals (interval-tree-intervals interval-tree)
         :center (interval-tree-center interval-tree)))
 
 (defun interval-tree-build (intervals &rest args)
-  (let ((depth (or (plist-get args :depth) 16))
-        (minbucket (or (plist-get args :minbucket) 2))
+  "Build the interval tree structure from a list of INTERVALS.
+
+Accepts optional keyword arguments.
+
+DEPTH is the maximum allowed depth of this tree.  Defaults to 32.
+
+MINBUCKET is the number of intervals that can go in a single
+node.  If the length of INTERVALS is less then this number, there
+is no further splitting.  Defaults to 8.
+
+LEFTEXTENT and RIGHTEXTENT are internal implementation arguments
+and represent the left and right boundary of the INTERNAL.  This
+information is used during the recursive building of the tree."
+  (let ((depth (or (plist-get args :depth) 32))
+        (minbucket (or (plist-get args :minbucket) 8))
         (maxbucket (or (plist-get args :maxbucket) 512))
         (leftextent (or (plist-get args :leftextend) 0))
         (rightextent (or (plist-get args :rightextend) 0)))
-    (message "%s" intervals)
     (setq depth (1- depth))
     (if (or (= depth 0)
-            ;; LENGTH IS BAD! O(n)
+            ;; LENGTH IS BAD! O(n) -- test instead if it has minbucket
+            ;; or more links
             (< (length intervals) minbucket))
         (interval-tree-create intervals)
       ;; this only happens with the initial call
@@ -141,9 +186,11 @@
                               centerp)))))
 
 (defun interval-tree-find-point (p itree)
+  "Find all the intervals in ITREE that contain point P."
   (interval-tree-find-overlapping p p itree))
 
 (defun interval-tree-find-overlapping (start stop itree)
+  "Find all the intervals in ITREE that overlap with interval [start, stop]."
   (let ((r nil))
     (when (and (interval-tree-intervals itree)
                (not (< stop (interval-beginning (car (interval-tree-intervals itree))))))
@@ -160,6 +207,7 @@
     r))
 
 (defun interval-tree-find-contained (start stop itree)
+  "Find all the intervals in ITREE that are contained in [start, stop]."
   (let ((r nil))
     (when (and (interval-tree-intervals itree)
                (not (< stop (interval-beginning (car (interval-tree-intervals itree))))))
