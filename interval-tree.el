@@ -143,9 +143,7 @@ information is used during the recursive building of the tree."
         (rightextent (or (plist-get args :rightextend) 0)))
     (setq depth (1- depth))
     (if (or (= depth 0)
-            ;; LENGTH IS BAD! O(n) -- test instead if it has minbucket
-            ;; or more links
-            (< (length intervals) minbucket))
+            (not (-drop minbucket intervals)))
         (interval-tree-create intervals)
       ;; this only happens with the initial call
       (when (and (= leftextent 0)
