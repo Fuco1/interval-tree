@@ -6,6 +6,7 @@
 ;; Maintainer: Matus Goljer <matus.goljer@gmail.com>
 ;; Created: 24 Mar 2013
 ;; Version: 0.1
+;; Package-Requires: ((dash "1.1.0"))
 ;; Keywords: extensions, data structure
 ;; URL: https://github.com/Fuco1/interval-tree
 
